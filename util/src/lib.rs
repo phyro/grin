@@ -63,6 +63,9 @@ pub mod zip;
 mod rate_counter;
 pub use crate::rate_counter::RateCounter;
 
+/// StatsD Metrics client
+pub mod metric;
+
 /// Encapsulation of a RwLock<Option<T>> for one-time initialization.
 /// This implementation will purposefully fail hard if not used
 /// properly, for example if not initialized before being first used
