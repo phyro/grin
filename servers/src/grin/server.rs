@@ -559,6 +559,38 @@ impl Server {
 				stats.stratum_stats.network_difficulty as u64,
 			)
 			.unwrap();
+		// Report tx pool stats
+		STATSD
+			.gauge(
+				"tx_pool.size",
+				stats.tx_stats.as_ref().unwrap().tx_pool_size as u64,
+			)
+			.unwrap();
+		STATSD
+			.gauge(
+				"tx_pool.kernels",
+				stats.tx_stats.as_ref().unwrap().tx_pool_kernels as u64,
+			)
+			.unwrap();
+		STATSD
+			.gauge(
+				"tx_pool.stem.size",
+				stats.tx_stats.as_ref().unwrap().stem_pool_size as u64,
+			)
+			.unwrap();
+		STATSD
+			.gauge(
+				"tx_pool.stem.kernels",
+				stats.tx_stats.as_ref().unwrap().stem_pool_kernels as u64,
+			)
+			.unwrap();
+		// Report diff stats
+		STATSD
+			.gauge("block.avg_block_time", stats.diff_stats.average_block_time)
+			.unwrap();
+		STATSD
+			.gauge("block.avg_difficulty", stats.diff_stats.average_difficulty)
+			.unwrap();
 	}
 
 	/// Stop the server.
