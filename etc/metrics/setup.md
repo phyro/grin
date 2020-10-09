@@ -13,10 +13,6 @@ docker-compose up -d
 
 For custom metrics sending, we will be using StatsD as an input and we will output the metrics to InfluxDB. In order to show the metrics in Grafana we need to set InfluxDB as its data source.
 
-Visit http://localhost:3000 and login with admin:admin.
+Visit http://localhost:3000 and login with admin:admin. There should be a grin dashboard available, if it is not there, wait for 1 minute.
 
-On the left menu select Configuration and then `Data source` and then select Influxdb. On the setup page we set the following values:
-- HTTP url: http://influxdb:8086
-- Database: telegraf
-- user: admin
-- password: supersecretpassword
+_NOTE: In order to read process stats we mount hostfs in docker-compose.yaml_
