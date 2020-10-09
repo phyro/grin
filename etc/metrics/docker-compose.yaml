@@ -17,10 +17,13 @@ telegraf:
   container_name: telegraf
   ports:
     - "8125:8125/udp"
+  env_file:
+    - 'env.telegraf'
   links:
     - influxdb
   volumes:
     - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    - /:/hostfs:ro
 
 grafana:
   image: grafana/grafana:latest
