@@ -32,6 +32,8 @@ use crate::types::{
 	Capabilities, ChainAdapter, Error, NetAdapter, P2PConfig, PeerAddr, PeerInfo, ReasonForBan,
 	TxHashSetRead, MAX_PEER_ADDRS,
 };
+use crate::util::metric::STATSD;
+use cadence::prelude::*;
 use chrono::prelude::*;
 use chrono::Duration;
 
@@ -262,6 +264,7 @@ impl Peers {
 					Error::PeerException
 				})?;
 				peers.remove(&peer.info.addr);
+				STATSD.incr("p2p.peers.ban").unwrap();
 				Ok(())
 			}
 			None => Err(Error::PeerNotFound),
@@ -274,6 +277,7 @@ impl Peers {
 		// check if peer exist
 		self.get_peer(peer_addr)?;
 		if self.is_banned(peer_addr) {
+			STATSD.incr("p2p.peers.unban").unwrap();
 			self.update_state(peer_addr, State::Healthy)
 		} else {
 			Err(Error::PeerNotBanned)
@@ -343,6 +347,7 @@ impl Peers {
 	/// if it knows the remote peer already has the transaction.
 	pub fn broadcast_transaction(&self, tx: &core::Transaction) {
 		let count = self.broadcast("transaction", |p| p.send_transaction(tx));
+		STATSD.incr("peer.tx.broadcast").unwrap();
 		debug!(
 			"broadcast_transaction: {} to {} peers, done.",
 			tx.hash(),
@@ -507,6 +512,18 @@ impl Peers {
 				peers.remove(&addr);
 			}
 		}
+		STATSD
+			.gauge("p2p.peer.inbound", self.peer_inbound_count() as u64)
+			.unwrap();
+		STATSD
+			.gauge("p2p.peer.outbound", self.peer_outbound_count() as u64)
+			.unwrap();
+		STATSD
+			.gauge(
+				"p2p.peer.connected",
+				self.connected_peers().iter().count() as u64,
+			)
+			.unwrap();
 	}
 
 	pub fn stop(&self) {
@@ -576,6 +593,7 @@ impl ChainAdapter for Peers {
 		tx: core::Transaction,
 		stem: bool,
 	) -> Result<bool, chain::Error> {
+		STATSD.incr("p2p.tx.received").unwrap();
 		self.adapter.transaction_received(tx, stem)
 	}
 
@@ -601,6 +619,7 @@ impl ChainAdapter for Peers {
 				})?;
 			Ok(false)
 		} else {
+			STATSD.incr("p2p.block.received").unwrap();
 			Ok(true)
 		}
 	}
@@ -626,6 +645,7 @@ impl ChainAdapter for Peers {
 				})?;
 			Ok(false)
 		} else {
+			STATSD.incr("p2p.block.compact.received").unwrap();
 			Ok(true)
 		}
 	}
@@ -646,6 +666,7 @@ impl ChainAdapter for Peers {
 				})?;
 			Ok(false)
 		} else {
+			STATSD.incr("p2p.header.received").unwrap();
 			Ok(true)
 		}
 	}
@@ -666,6 +687,7 @@ impl ChainAdapter for Peers {
 				})?;
 			Ok(false)
 		} else {
+			STATSD.incr("p2p.header.received").unwrap();
 			Ok(true)
 		}
 	}

@@ -51,7 +51,9 @@ use crate::p2p;
 use crate::p2p::types::PeerAddr;
 use crate::pool;
 use crate::util::file::get_first_line;
+use crate::util::metric::STATSD;
 use crate::util::{RwLock, StopState};
+use cadence::prelude::*;
 use grin_util::logger::LogEntry;
 
 /// Arcified  thread-safe TransactionPool with type parameters used by server components
@@ -529,8 +531,7 @@ impl Server {
 			.fold(0, |acc, m| acc + m.len());
 
 		let disk_usage_gb = format!("{:.*}", 3, (disk_usage_bytes as f64 / 1_000_000_000_f64));
-
-		Ok(ServerStats {
+		let stats = ServerStats {
 			peer_count: self.peer_count(),
 			chain_stats: head_stats,
 			header_stats: header_stats,
@@ -540,7 +541,24 @@ impl Server {
 			peer_stats: peer_stats,
 			diff_stats: diff_stats,
 			tx_stats: tx_stats,
-		})
+		};
+		self.report_server_metrics(&stats);
+
+		Ok(stats)
+	}
+
+	/// Reports metrics to the statsd server
+	pub fn report_server_metrics(&self, stats: &ServerStats) {
+		let disk_usage_gb = stats.disk_usage_gb.parse::<f64>().unwrap();
+		STATSD
+			.gauge("server.disk_usage_mb", (disk_usage_gb * 1_000.0) as u64)
+			.unwrap();
+		STATSD
+			.gauge(
+				"server.stratum.network_difficulty",
+				stats.stratum_stats.network_difficulty as u64,
+			)
+			.unwrap();
 	}
 
 	/// Stop the server.

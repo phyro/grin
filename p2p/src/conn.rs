@@ -24,7 +24,9 @@ use crate::codec::{Codec, BODY_IO_TIMEOUT};
 use crate::core::ser::ProtocolVersion;
 use crate::msg::{write_message, Consumed, Message, Msg};
 use crate::types::Error;
+use crate::util::metric::STATSD;
 use crate::util::{RateCounter, RwLock};
+use cadence::prelude::*;
 use std::fs::File;
 use std::io::{self, Write};
 use std::net::{Shutdown, TcpStream};
@@ -152,18 +154,24 @@ impl Tracker {
 	}
 
 	pub fn inc_received(&self, size: u64) {
+		STATSD.gauge("p2p.tracker.received", size as u64).unwrap();
 		self.received_bytes.write().inc(size);
 	}
 
 	pub fn inc_sent(&self, size: u64) {
+		STATSD.gauge("p2p.tracker.sent", size as u64).unwrap();
 		self.sent_bytes.write().inc(size);
 	}
 
 	pub fn inc_quiet_received(&self, size: u64) {
+		STATSD
+			.gauge("p2p.tracker.received_quiet", size as u64)
+			.unwrap();
 		self.received_bytes.write().inc_quiet(size);
 	}
 
 	pub fn inc_quiet_sent(&self, size: u64) {
+		STATSD.gauge("p2p.tracker.sent_quiet", size as u64).unwrap();
 		self.sent_bytes.write().inc_quiet(size);
 	}
 }

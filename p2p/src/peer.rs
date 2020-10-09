@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::util::metric::STATSD;
 use crate::util::{Mutex, RwLock};
 use std::fmt;
 use std::fs::File;
@@ -35,6 +36,7 @@ use crate::types::{
 	Capabilities, ChainAdapter, Error, NetAdapter, P2PConfig, PeerAddr, PeerInfo, ReasonForBan,
 	TxHashSetRead,
 };
+use cadence::prelude::Counted;
 use chrono::prelude::{DateTime, Utc};
 
 const MAX_TRACK_SIZE: usize = 30;
@@ -330,6 +332,7 @@ impl Peer {
 	/// embargo).
 	pub fn send_stem_transaction(&self, tx: &core::Transaction) -> Result<(), Error> {
 		debug!("Send (stem) tx {} to {}", tx.hash(), self.info.addr);
+		STATSD.incr("p2p.peer.tx.send_stem").unwrap();
 		self.send(tx, msg::Type::StemTransaction)
 	}
 
